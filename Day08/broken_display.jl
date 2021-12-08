@@ -1,18 +1,6 @@
 include("../utils/io.jl")
 
 UNIQUE_DIGITS = Set([2, 3, 4, 7])
-DIGIT_MAP = Dict(
-    Set(collect("abcefg"))  => 0,
-    Set(collect("cf"))      => 1, 
-    Set(collect("acdeg"))   => 2,
-    Set(collect("acdfg"))   => 3,
-    Set(collect("bcdf"))    => 4,
-    Set(collect("abdfg"))   => 5, 
-    Set(collect("abdefg"))  => 6,
-    Set(collect("acf"))     => 7,
-    Set(collect("abcdefg")) => 8,
-    Set(collect("abcdfg"))  => 9
-)
 
 function parse_line(line)
     patterns, output = split(line, "|")
