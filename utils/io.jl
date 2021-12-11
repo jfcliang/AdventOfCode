@@ -14,3 +14,20 @@ function parse_digit_matrix(path::String)
     mat = transpose(hcat(mat...))
     return mat
 end
+
+function adjacent_idx(i, j, ym, xm)
+    function within_bound(idx, max)
+        return (1 <= idx) && (idx <= max)
+    end
+
+    cands = [
+        (i-1, j-1), (i-1, j), (i-1, j+1),
+        (i, j-1), (i, j+1),
+        (i+1, j-1), (i+1, j), (i+1, j+1)
+    ]
+        
+    return [cand for cand in cands if (
+                within_bound(cand[1], ym) && 
+                within_bound(cand[2], xm))]
+
+end
