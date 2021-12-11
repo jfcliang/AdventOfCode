@@ -1,16 +1,5 @@
 include("../utils/io.jl")
 
-function parse_input(path::String)
-    raw_str = input_to_raw_str(path)
-    heatmap = [
-        [parse(Int8, n) for n in split(row, "")] 
-            for row in split(raw_str, "\n")
-    ]
-    heatmap = transpose(hcat(heatmap...))
-    return heatmap
-end
-
-
 function check_low_point(heatmap, i, j)
     v_edge, h_edge = size(heatmap)
     ontop = (i == 1)
@@ -86,7 +75,7 @@ end
 
 
 function solution(path::String)
-    heatmap = parse_input(path)
+    heatmap = parse_digit_matrix(path)
     v_edge, h_edge = size(heatmap)
     low_points = Set()
     total = 0
