@@ -99,8 +99,8 @@ function solution(path::String)
     print(freqs, "\n")
 
     counts = values(freqs)
-    maxi = maximum(counts)
-    mini = minimum(counts)
+    maxi = maximum(counts) / 2
+    mini = minimum(counts) / 2 
 
     print("Subtraction result: ", maxi - mini, "\n")
 
