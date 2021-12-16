@@ -31,3 +31,22 @@ function adjacent_idx(i, j, ym, xm)
                 within_bound(cand[2], xm))]
 
 end
+
+
+function hex_to_binary(hex_string)
+    return lpad(
+                string(parse(Int8, hex_string, base=16), base=2),
+                4, '0')
+end
+
+function binary_to_hex(hex_string)
+    return string(parse(Int8, hex_string, base=2), base=16)
+end
+
+function long_hex_to_binary(hex_string)
+    binary = ""
+    for char in hex_string
+        binary *= hex_to_binary(char)
+    end
+    return binary
+end
