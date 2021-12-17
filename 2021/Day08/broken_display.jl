@@ -1,4 +1,4 @@
-include("../utils/io.jl")
+include("../../utils/io.jl")
 
 UNIQUE_DIGITS = Set([2, 3, 4, 7])
 

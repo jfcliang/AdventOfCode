@@ -1,4 +1,4 @@
-include("../utils/io.jl")
+include("../../utils/io.jl")
 
 function parse_input(path::String)
     raw_str = string(input_to_raw_str(path))
@@ -21,17 +21,14 @@ function decode_literal_packet(packet, current_bit)
     num_string *= part
     current_bit += 5
 
-    # remainder = 3 - (current_bit - start_bit + 3) % 4
-    # print("literal remainder: ", remainder, '\n')
-    # current_bit += remainder
     print("literal finished, now at ", current_bit, '\n')
-    return 0, current_bit
+    return parse(Int64, num_string, base=2), current_bit
 end
 
 
-function decode_operator_packet(packet, current_bit)
+function decode_operator_packet(packet, current_bit, operator)
     print("operator started, now at ", current_bit, '\n')
-    version_sum = 0
+    total_sums = []
     length_type = packet[current_bit]
     if length_type == '1'
         num_packet = parse(Int64, packet[current_bit+1: current_bit+11], base=2)
@@ -39,7 +36,7 @@ function decode_operator_packet(packet, current_bit)
         print("oprator 1 got ", num_packet, " packets. Now at ", current_bit, '\n')
         for i in 1:num_packet
             current_sum, current_bit = decode(packet, current_bit)
-            version_sum += current_sum 
+            append!(total_sums, current_sum)
         end
         print("operator 1 finished, now at ", current_bit, '\n')
     else
@@ -49,39 +46,65 @@ function decode_operator_packet(packet, current_bit)
         print("oprator 0 got ", length_packet, " digits. Now at ", current_bit, '\n')
         while current_bit < start_bit + length_packet
             current_sum, current_bit = decode(packet, current_bit)
-            version_sum += current_sum
+            append!(total_sums, current_sum)
         end
         print("operator 0 finished, now at ", current_bit, '\n')
     end
 
-    return version_sum, current_bit
+    return operator(total_sums), current_bit
 end
 
-
-function decode(packet, current_bit)
-    version_sum = parse(Int64, packet[current_bit:current_bit+2], base=2)
-    type_id = parse(Int64, packet[current_bit+3:current_bit+5], base=2)
-    print("From ", current_bit, " to ", current_bit+5, ": version, type -> ", version_sum, " , ", type_id, '\n')
-    current_bit += 6
-    if type_id == 4
-        current_sum, current_bit = decode_literal_packet(packet, current_bit)
-        version_sum += current_sum
-    else
-        current_sum, current_bit = decode_operator_packet(packet, current_bit)
-        version_sum += current_sum
+function multiply(arr)
+    total = 1
+    for ele in arr
+        total *= ele
     end
 
-    return version_sum, current_bit
+    return total
+end
+
+function largers(arr)
+    return arr[1] > arr[2]
+end
+
+function smallers(arr)
+    return arr[1] < arr[2]
+end
+
+function equals(arr)
+    return arr[1] == arr[2]
+end
+
+function decode(packet, current_bit)
+    type_id = parse(Int64, packet[current_bit+3:current_bit+5], base=2)
+    current_bit += 6
+    if type_id == 4
+        return decode_literal_packet(packet, current_bit)
+    elseif type_id == 0
+        return decode_operator_packet(packet, current_bit, sum)
+    elseif type_id == 1
+        return decode_operator_packet(packet, current_bit, multiply)
+    elseif type_id == 2
+        return decode_operator_packet(packet, current_bit, minimum)
+    elseif type_id == 3
+        return decode_operator_packet(packet, current_bit, maximum)
+    elseif type_id == 5
+        return decode_operator_packet(packet, current_bit, largers)
+    elseif type_id == 6
+        return decode_operator_packet(packet, current_bit, smallers)
+    elseif type_id == 7
+        return decode_operator_packet(packet, current_bit, equals)
+    end
 end
 
 
 function solution(path::String)
     packet = parse_input(path)
-    version_sum, _ = decode(packet, 1)
-    print("Total sum of version number is: ", version_sum, "\n")
+    
+    print("Total result of calculation is: ", decode(packet, 1), "\n")
 end
 
 
 solution("./input.txt")
 # print(long_hex_to_binary("D2FE28"))
-# print(decode(long_hex_to_binary("8A004A801A8002F478"), 1))
+# print(decode(long_hex_to_binary("D8005AC2A8F0"), 1))

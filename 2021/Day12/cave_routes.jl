@@ -1,4 +1,4 @@
-include("../utils/io.jl")
+include("../../utils/io.jl")
 
 function parse_input(path::String)
     function add_points!(point_dict, p1, p2)

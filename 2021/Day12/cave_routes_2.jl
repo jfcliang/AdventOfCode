@@ -1,4 +1,4 @@
-include("../utils/io.jl")
+include("../../utils/io.jl")
 
 struct Route
     seq::Array{String}

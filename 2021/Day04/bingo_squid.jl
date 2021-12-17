@@ -1,4 +1,4 @@
-include("../utils/io.jl")
+include("../../utils/io.jl")
 
 function parse_raw(input_path::String)
     raw_str = input_to_raw_str(input_path)

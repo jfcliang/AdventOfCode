@@ -1,4 +1,4 @@
-include("../utils/io.jl")
+include("../../utils/io.jl")
 
 function parse_points(raw_points)
     function parse_row(row)

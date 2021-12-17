@@ -1,4 +1,4 @@
-include("../utils/io.jl")
+include("../../utils/io.jl")
 
 function check_low_point(heatmap, i, j)
     v_edge, h_edge = size(heatmap)

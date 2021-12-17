@@ -1,4 +1,4 @@
-include("../utils/io.jl")
+include("../../utils/io.jl")
 
 struct ThermalLine
     point_a::Tuple{Int, Int}

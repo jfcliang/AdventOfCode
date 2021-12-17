@@ -1,4 +1,4 @@
-include("../utils/io.jl")
+include("../../utils/io.jl")
 
 function parse_instructions(instructions)
     ins = Dict()
