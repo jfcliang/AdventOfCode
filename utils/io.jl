@@ -50,3 +50,13 @@ function long_hex_to_binary(hex_string)
     end
     return binary
 end
+
+
+function print_tight_matrix(matrix)
+    for i in 1:size(matrix)[1]
+        for j in 1:size(matrix)[2]
+            print(matrix[i, j])
+        end
+        print("\n")
+    end
+end

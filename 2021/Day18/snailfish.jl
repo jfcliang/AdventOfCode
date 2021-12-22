@@ -52,8 +52,11 @@ function find_right_neighbor(current_node)
     end
 end
 
-function check_current_node(current_node)
-    if !isnan(current_node.data) && find_depth(current_node) > 4
+function check_current_node_explode(current_node)
+    if (isdefined(current_node, :parent) &&
+        !isnan(current_node.parent.left.data) &&
+        !isnan(current_node.parent.right.data) && 
+        find_depth(current_node) > 4)
         # explode
         parent = current_node.parent
         left_node = parent.left
@@ -79,7 +82,10 @@ function check_current_node(current_node)
         end
         return false
     end
+    return true
+end
 
+function check_current_node_split(current_node)
     if current_node.data >= 10
         # split
         rd = div(current_node.data, 2)
@@ -91,19 +97,20 @@ function check_current_node(current_node)
     return true
 end
 
+
 # Need to sequence the action
-function traverse_nodes(current_node)
-    passed = check_current_node(current_node)
+function traverse_nodes(current_node, check)
+    passed = check(current_node)
     if !passed
         return false
     end
     
     if isnan(current_node.data)
-        passed = traverse_nodes(current_node.left)
+        passed = traverse_nodes(current_node.left, check)
         if !passed
             return false
         end
-        passed = traverse_nodes(current_node.right)
+        passed = traverse_nodes(current_node.right, check)
     end
     return passed
 end
@@ -119,6 +126,11 @@ function print_tree(root)
     print(',')
     print_tree(root.right)
     print(']')
+end
+
+function print_from_root(root)
+    print_tree(root)
+    print("\n")
 end
 
 function row_to_bintree(row)
@@ -158,9 +170,28 @@ function add_trees(tree1, tree2)
 end
 
 function reduce_number!(tree)
-    passed = false
-    while !passed
-        passed = traverse_nodes(tree)
+    # print_from_root(tree)
+    while true
+        total = 0
+        passed = false
+        while !passed
+            passed = traverse_nodes(tree, check_current_node_explode)
+            # print("After explode: \n")
+            # print_from_root(tree)
+            if !passed 
+                total += 1
+            end
+        end
+        
+        # Only check split once, because explode takes priority,
+        # and it might be caused by the split
+        passed = traverse_nodes(tree, check_current_node_split)
+            # print("After split: \n")
+            # print_from_root(tree)
+        if !passed 
+            total += 1
+        end
+        total != 0 || break
     end
 end
 
@@ -181,12 +212,7 @@ end
 
 function test_examples(str)
     root = row_to_bintree(str)
-    passed = false
-    while !passed
-        print_tree(root)
-        print("\n")
-        passed = traverse_nodes(root)
-    end
+    reduce_number!(root)
     print_tree(root)
 end
 
@@ -212,12 +238,33 @@ function solution(path::String)
     print(calc_magnitude(result), "\n")
 end
 
-# test_examples("[[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]")
-test_examples("[[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]],[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]]")
+function solution2(path::String)
+    numbers = row_to_bintree.(parse_input(path))
+    maximum = 0
+    pair_num = nothing
 
-# test_examples("[[[[[9,8],1],2],3],4]")
-# test_examples("[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]")
-# test_examples("[1,4]")
+    for (i, _) in enumerate(numbers)
+        for (j, _) in enumerate(numbers)
+            if i != j
+                new_numbers = row_to_bintree.(parse_input(path))
+                n1, n2 = new_numbers[i], new_numbers[j]
+                add1 = add_trees(n1, n2)
+                reduce_number!(add1)
+                mag1 = calc_magnitude(add1)
+                if mag1 > maximum
+                    maximum = mag1
+                    pair_num = n1, n2
+                end
+            end
+        end
+    end
+    print(maximum, "\n") 
+    print_from_root.(pair_num)
+end
+
+
 # solution("./input_example.txt")
+# solution2("./input_example.txt")
 # solution("./input.txt")
-# test_addition("[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]", "[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]")
+solution2("./input.txt")
+# test_addition("[[[[7,0],[7,7]],[[7,7],[7,8]]],[[[7,7],[8,8]],[[7,7],[8,7]]]]", "[7,[5,[[3,8],[1,4]]]]")
