@@ -15,6 +15,17 @@ function parse_digit_matrix(path::String)
     return mat
 end
 
+function parse_char_matrix(path::String)
+    raw_str = input_to_raw_str(path)
+    mat = [
+        [only(n) for n in split(strip(row), "")] 
+            for row in split(raw_str, "\n")
+    ]
+    
+    mat = permutedims(hcat(mat...))
+    return mat
+end
+
 function adjacent_idx(i, j, ym, xm)
     function within_bound(idx, max)
         return (1 <= idx) && (idx <= max)
