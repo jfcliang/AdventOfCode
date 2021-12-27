@@ -105,5 +105,17 @@ function solution(path::String)
 
 end
 
+function sanity_check(path, serial)
+    instructions = parse_input(path)
+    alu = Dict([(str, 0) for str in ["x", "y", "z", "w"]])
+    print(serial, "\n")
+    ptr = 1
+    for ins in instructions
+        ptr = operate!(alu, ins, serial, ptr)
+    end
+    
+    print(alu["z"])
+end
 
-solution("./input.txt")
+# solution("./input.txt")
+sanity_check("./input.txt", "87115131916119")

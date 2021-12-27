@@ -7,7 +7,7 @@ end
 
 function parse_input(path::String)
     raw_str = input_to_raw_str(path)
-    blocks = strip.(split(raw_str, "\nadd z y\n"))
+    blocks = strip.(split(raw_str, "\r\nadd z y\r\n"))
     xy_mat = fill(0, (14, 3))
 
     for (i, block) in enumerate(blocks)
@@ -41,23 +41,6 @@ function operate_simple(z, xy_mat, w, i)
     return z
 end
 
-# z will not be smaller than 0
-# On step 14, because no matter what z is, z*26 + w + xy_mat[i, 3] cannot be zero
-# Thus on step 14 the first branch must have been taken, and z needs to be between 0 and 25
-# z % 26 + xy_mat[14, 2]  == w
-# z % 26 - 14  == w
-# if z == 25 then w can be 11
-# if z == 24 then w can be 10 
-# if z == 23 then w can be 9
-# ...
-# if z == 15 then w can be 1
-# Thus for step 14, possible input z is 15 -> 23
-
-# For step 13
-# it must have been gone through branch one, otherwise z would be larger than 26
-# z % 26 + xy_mat[13, 2]  == w
-# z % 26 -16  == w
-
 function check_mat(xy_mat, w1, w2)
     found = false
     for i in 1:13
@@ -72,31 +55,59 @@ function check_mat(xy_mat, w1, w2)
     end
 end
 
+# Numbers are written in deduction.txt
+# There are certain restrictions for the w input at every step.
+# See Function operate_simple: at every step, if it goes in first branch, z gets possibly reduced
+# if it goes second, z gets multiplied by 26 and then add some (according to the input matrix)
+# because z starts out to be 0, to be back to 0 in the end, it must go through 7 steps of branch 2 
+# with multiplication and 7 steps of branch 1. 
+# 
+# Because in order to get reduction from the div, there are only 7 in xy_mat[:, 1], thus for these
+# 7 steps it has to go through branch 1, and the other 7 steps it can go through branch 2.
+# 
+# because in the if check, the result from (z % 26 + xy_mat[i, 2]) is actually just
+#     w[i-1] + xy_mat[i-1, 3]
+# in order to make the calculation go into branch 1, this must be satisfied:
+#     w[i-1] + xy_mat[i-1, 3] = w[i]
+# if there are consecutive 26s in xy_mat[:, 1], the w[i-1] is then taken from whatever last time 
+# branch 2 is processed, kind of like a stack operation. 
+
+# With these restrictions, there are only 30240 possible combinations, a big reduction from the 
+# brute-force 9^14 possibilities
+
+function generate_possible_serials()
+    return [
+        (w1, w2, w3, w4, w4+4, w6, w6+2, w8, 9, 1, w8+5, w3, w2-6, w1+1)
+            for w1 in 8:-1:1 
+            for w2 in 9:-1:7
+            for w3 in 9:-1:1    
+            for w4 in 5:-1:1
+            for w6 in 7:-1:1
+            for w8 in 4:-1:1
+    ]
+end
+
 function solution(path::String)
     xy_mat = parse_input(path)
 
     print(xy_mat[:, 1], "\n")
     print(xy_mat[:, 2], "\n")
     print(xy_mat[:, 3], "\n")
-
-    for serial in 99999999999999:-1:11111111111111
+    answers = []
+    for serial in generate_possible_serials()
         z = 0
-        new_num = serial
-        if serial % 10000000 == 1111111
-            print(serial, "\n")
-        end
-        for i in 1:14
-            denom = 10^(14-i)
-            num = div(new_num, denom)
+        
+        for (i, num) in enumerate(serial)
             z = operate_simple(z, xy_mat, num, i)
-            new_num %= denom
         end
+
         if z == 0 
-            print(serial, "\n")
-            break
+            push!(answers, serial)
         end
     end
+    print(answers[1], "\n") # part 1
+    print(answers[end], "\n") # part 2
 end
 
-
+# print(length(generate_possible_serials()))
 solution("./input.txt")
