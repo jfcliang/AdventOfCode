@@ -5,6 +5,16 @@ function input_to_raw_str(path::String)
     end
 end
 
+function parse_input_lines(path::String, delim::String)
+    raw = input_to_raw_str(path)
+    lines = strip.(split(raw, delim))
+    println("Parsed $(length(lines)) lines of input.")
+    println("First line: $(lines[begin])")
+    println("Last line: $(lines[end])")
+
+    return lines
+end
+
 function parse_digit_matrix(path::String)
     raw_str = input_to_raw_str(path)
     mat = [
