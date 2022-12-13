@@ -12,7 +12,7 @@ function parse_input_lines(path::String, delim::String)
     println("First line: $(lines[begin])")
     println("Last line: $(lines[end])")
 
-    return lines
+    return String.(lines)
 end
 
 function parse_digit_matrix(path::String)
