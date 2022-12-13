@@ -1,18 +1,14 @@
+using JSON
+
 include("../../utils/io.jl")
 
 @enum STATUS good cont bad
-
-function parse_signal(signal_str::String)
-    result = eval(Meta.parse(signal_str))
-
-    return result 
-end
 
 
 function parse_pair(pair_str::String)
     pair = split(pair_str, "\r\n")
 
-    return [parse_signal(String(signal_str)) for signal_str in pair]
+    return [JSON.parse(String(signal_str)) for signal_str in pair]
 end
 
 
@@ -29,7 +25,7 @@ function parse_input2(path::String)
     cleaned = replace(input_str, "\r\n\r\n" => "\r\n")
     signal_strs = String.(strip.(split(cleaned, "\r\n")))
 
-    return [parse_signal(signal_str) for signal_str in signal_strs]
+    return [JSON.parse(signal_str) for signal_str in signal_strs]
 end
 
 function compare_vectors(v1::Vector, v2::Vector)
