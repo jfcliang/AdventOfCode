@@ -2,7 +2,9 @@ include("../../utils/io.jl")
 
 scenario_dict = Dict()
 max_geo_dict = Dict()
-cost_dict = Dict()
+
+max_sofar = [16, 35, 20] # from the shameful trials earlier
+# max_sofar = [50, 60]
 
 
 function parse_blueprint(line::String)
@@ -17,47 +19,51 @@ function parse_blueprint(line::String)
     return [ore, clay, obs, geo]
 end
 
-
-function calculate_cost(ore, clay, obs, geo, bp)
-    key = (ore, clay, obs, geo)
-    if haskey(cost_dict, key)
-        return cost_dict[key]
-    end
-    cost = ore*bp[1] + clay*bp[2] + obs*bp[3] + geo*bp[4]
-    cost_dict[key] = cost
-    return cost
+function best_geode_possible(geodes::Int64, geobots::Int64, t_remain::Int64)
+    return geodes + (2*geobots + t_remain - 1) * t_remain / 2
 end
-
 
 function generate_scenarios(
     minerals::Vector{Int64}, 
-    bp::Vector{Vector{Int64}})
+    robots::Vector{Int64},
+    bp::Vector{Vector{Int64}}, 
+    max_minerals::Vector{Int64},
+    t_remain::Int64,
+    target_geodes::Int64)
 
     current = minerals
-
-    key = (current[1], current[2], current[3], current[4])
+    key = hash((current, t_remain))
 
     if haskey(scenario_dict, key)
         return scenario_dict[key]
     end
 
-    geo = min(div(current[3], bp[4][3]), div(current[1], bp[4][1]))
-    current -= geo * bp[4]
+    if best_geode_possible(minerals[4], robots[4], t_remain) < target_geodes
+        result = [-1]
+        scenario_dict[key] = result
+        return result
+    end
 
-    obs = min(div(current[2], bp[3][2]), div(current[1], bp[3][1]))
-    current -= obs * bp[3]
+    geo_avail = current[3] >= bp[4][3] && current[1] >= bp[4][1] 
+    obs_avail = current[2] >= bp[3][2] && current[1] >= bp[3][1] && robots[3] < max_minerals[3]
+    clay_avail = current[1] >= bp[2][1] && robots[2] < max_minerals[2]
+    ore_avail = current[1] >= bp[1][1] && robots[1] < max_minerals[1]
 
-    max_clay = div(current[1], bp[2][1])
-    max_ore = div(current[1], bp[1][1])
+    new_scenarios = Vector{Int64}()
 
-    new_scenarios = []
-
-    for ore in 0:max_ore
-        for clay in 0:max_clay
-            cost = calculate_cost(ore, clay, obs, geo, bp)
-            if all(cost .<= minerals)
-                push!(new_scenarios, ([ore, clay, obs, geo], cost))
-            end 
+    if geo_avail
+        push!(new_scenarios, 4)
+        # always good to make new geode bot
+    else
+        push!(new_scenarios, 0)
+        if obs_avail
+            push!(new_scenarios, 3)
+        end
+        if clay_avail
+            push!(new_scenarios, 2)
+        end
+        if ore_avail
+            push!(new_scenarios, 1)
         end
     end
 
@@ -69,12 +75,12 @@ end
 function max_geodes(
     current_robots::Vector{Int64}, 
     current_minerals::Vector{Int64}, 
-    bp::Vector{Vector{Int64}}, t_remain::Int64) :: Int64
-    key = (
-        current_robots[1], current_robots[2], current_robots[3], current_robots[4], 
-        current_minerals[1], current_minerals[2], current_minerals[3], current_minerals[4], 
-        t_remain
-    )
+    bp::Vector{Vector{Int64}}, 
+    max_minerals::Vector{Int64},
+    t_remain::Int64, total_t::Int64, 
+    target_geodes::Int64) :: Int64
+
+    key = hash((current_robots, current_minerals, t_remain))
 
     if haskey(max_geo_dict, key)
         return max_geo_dict[key]
@@ -85,14 +91,27 @@ function max_geodes(
         max_geo_dict[key] = result
         return result
     else
-        new_scenarios = generate_scenarios(current_minerals, bp)
+        new_scenarios = generate_scenarios(
+            current_minerals, current_robots, bp, max_minerals, t_remain, target_geodes)
         geodes = fill(0, length(new_scenarios))
-        after_mining = current_minerals += current_robots
+        current_minerals += current_robots
 
-        for (i, (new_bots, costs)) in enumerate(new_scenarios)
-            updated_bots = current_robots + new_bots
-            updated_minerals = after_mining - costs
-            geodes[i] = max_geodes(updated_bots, updated_minerals, bp, t_remain-1)
+        for (i, new_bot) in enumerate(new_scenarios)
+            updated_bots = copy(current_robots)
+            updated_minerals = current_minerals
+
+            if new_bot == -1
+                result = 0
+                max_geo_dict[key] = result
+                return result
+            end
+
+            if new_bot > 0
+                updated_bots[new_bot] += 1
+                updated_minerals -= bp[new_bot]
+            end
+
+            geodes[i] = max_geodes(updated_bots, updated_minerals, bp, max_minerals, t_remain-1, total_t, target_geodes)
         end
 
         result = maximum(geodes)
@@ -102,30 +121,67 @@ function max_geodes(
 end
 
 
-function get_max_geodes(bp) :: Int64
+ function get_max_geodes(bp, time, target_geodes) :: Int64
     robots = [1, 0, 0, 0]
     minerals = [0, 0, 0, 0]
-    time = 21
-    
-    geo = max_geodes(robots, minerals, bp, time)
+
+    max_minerals = [0, 0, 0]
+    for recipe in bp
+        for i in 1:3
+            if recipe[i] > max_minerals[i]
+                max_minerals[i] = recipe[i]
+            end
+        end
+    end
+
+    println(max_minerals)
+
+    geo = max_geodes(robots, minerals, bp, max_minerals, time, time, target_geodes)
     return geo
 end
-    
+
+
 
 function solution1(path::String)
     input_strs = parse_input_lines(path, "\r\n")
     blueprints = parse_blueprint.(input_strs)
+    time = 24
 
     quality = 0
-    for (i, bp) in enumerate(blueprints)
+
+    for (i, bp) in enumerate(blueprints[1:3])
         empty!(max_geo_dict)
         empty!(scenario_dict)
-        empty!(cost_dict)
-        quality += get_max_geodes(bp) * i
+
+        result = get_max_geodes(bp, time, 0)
+        println("Blueprint $i gives quality $result")
+        quality += result * i 
     end
 
     println(quality)
 end
 
-# solution1("./input.txt")
-solution1("./input_example.txt")
+
+function solution2(path::String)
+    input_strs = parse_input_lines(path, "\r\n")
+    blueprints = parse_blueprint.(input_strs)
+    time = 32
+
+    quality = 1
+
+    for (i, bp) in enumerate(blueprints[1:3])
+        empty!(max_geo_dict)
+        empty!(scenario_dict)
+
+        result = get_max_geodes(bp, time, max_sofar[i])
+        println("Blueprint $i gives quality $result")
+        quality *= result
+    end
+    println(quality)
+end
+
+
+# @time solution1("./input_example.txt")
+# @time solution1("./input.txt")
+@time solution2("./input.txt")
+# @time solution2("./input_example.txt")
