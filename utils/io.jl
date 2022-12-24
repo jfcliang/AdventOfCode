@@ -1,11 +1,15 @@
-function input_to_raw_str(path::String)
+function input_to_raw_str(path::String, stripping::Bool=true) :: String
     open(path) do file
         total_str = read(file, String)
-        return strip(total_str)
+        if stripping
+            return strip(total_str)
+        else
+            return total_str
+        end
     end
 end
 
-function parse_input_lines(path::String, delim::String)
+function parse_input_lines(path::String, delim::String) :: Vector{String}
     raw = input_to_raw_str(path)
     lines = strip.(split(raw, delim))
     println("Parsed $(length(lines)) lines of input.")
@@ -15,7 +19,7 @@ function parse_input_lines(path::String, delim::String)
     return String.(lines)
 end
 
-function parse_digit_matrix(path::String)
+function parse_digit_matrix(path::String) :: Matrix{Int8}
     raw_str = input_to_raw_str(path)
     mat = [
         [parse(Int8, n) for n in split(strip(row), "")] 
@@ -25,7 +29,7 @@ function parse_digit_matrix(path::String)
     return mat
 end
 
-function parse_char_matrix(path::String)
+function parse_char_matrix(path::String) :: Matrix{Char}
     raw_str = input_to_raw_str(path)
     mat = [
         [only(n) for n in split(strip(row), "")] 
