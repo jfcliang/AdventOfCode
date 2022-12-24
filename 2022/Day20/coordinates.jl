@@ -115,7 +115,7 @@ function solution2(path::String)
     println(get_result(nums))
 end
 
-solution1("./input.txt")
-solution2("./input.txt")
+@time solution1("./input.txt")
+@time solution2("./input.txt")
 # solution1("./input_example.txt")
 # solution2("./input_example.txt")
